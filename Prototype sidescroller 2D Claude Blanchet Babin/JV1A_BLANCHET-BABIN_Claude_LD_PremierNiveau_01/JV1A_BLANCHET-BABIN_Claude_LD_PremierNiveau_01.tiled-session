@@ -1,0 +1,38 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "JV1A_BLANCHET-BABIN_Claude_LD_PremierNiveau_01.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "JV1A_BLANCHET-BABIN_Claude_LD_PremierNiveau_01.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 36,
+            "viewCenter": {
+                "x": 868,
+                "y": 784
+            }
+        },
+        "tileset_premier_niveau_partie_2.tsx": {
+            "scaleInDock": 0.5,
+            "scaleInEditor": 1
+        }
+    },
+    "last.imagePath": "D:/claud/Documents/Claude/ETPA/Level Design/Premier Niveau/JV1A_BLANCHET-BABIN_Claude_LD_PremierNiveau_01",
+    "map.height": 50,
+    "map.lastUsedFormat": "tmx",
+    "map.width": 50,
+    "openFiles": [
+        "JV1A_BLANCHET-BABIN_Claude_LD_PremierNiveau_01.tmx",
+        "tileset_premier_niveau_partie_2.tsx"
+    ],
+    "project": "JV1A_BLANCHET-BABIN_Claude_LD_PremierNiveau_01.tiled-project",
+    "recentFiles": [
+        "tileset_premier_niveau_partie_2.tsx",
+        "JV1A_BLANCHET-BABIN_Claude_LD_PremierNiveau_01.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx"
+}
