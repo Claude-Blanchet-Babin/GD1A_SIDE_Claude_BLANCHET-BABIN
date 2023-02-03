@@ -242,7 +242,7 @@ function create(){
 
     this.anims.create({
         key: 'turn',
-        frames: [ { key: 'perso', frame: 13 } ],
+        frames: [ { key: 'perso', frame: 12 } ],
         frameRate: 20
     });
     this.anims.create({
