@@ -56,12 +56,9 @@ var speed1;
 var speed2;
 
 var cursors;
-var stars;
 var score = 0;
 var scoreText;
-var bombs;
 var gameOver = false;
-var round = 1;
 
 function create(){
 
@@ -238,19 +235,19 @@ function create(){
     // afficher les animations du personnage lorsqu'il se déplace
     this.anims.create({
         key: 'left',
-        frames: this.anims.generateFrameNumbers('perso', {start:0,end:3}),
+        frames: this.anims.generateFrameNumbers('perso', {start:0,end:12}),
         frameRate: 10,
         repeat: -1
     });
 
     this.anims.create({
         key: 'turn',
-        frames: [ { key: 'perso', frame: 4 } ],
+        frames: [ { key: 'perso', frame: 13 } ],
         frameRate: 20
     });
     this.anims.create({
         key: 'right',
-        frames: this.anims.generateFrameNumbers('perso', {start:5,end:8}),
+        frames: this.anims.generateFrameNumbers('perso', {start:14,end:25}),
         frameRate: 10,
         repeat: -1
     });
