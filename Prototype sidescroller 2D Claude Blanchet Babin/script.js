@@ -4,7 +4,7 @@ var config = {
     physics: {
         default: 'arcade',
         arcade: {
-        gravity: { y: 500 },
+        gravity: { y: 0 },
         debug: true
     }},
     scene: {preload: preload, create: create, update: update }
@@ -55,16 +55,14 @@ var playerLife = 5 ;
 var playerOpacity ;
 var playerDegat = false ;
 var playerVitesse = 1 ;
+var hit = false;
+
+
 
 var wallJumpGauche = false;
 var wallJumpDroite = false;
 var sautDispo = true;
 var hauteurSaut = -380;
-
-
-
-var speed1;
-var speed2;
 
 var cursors;
 var score = 0;
@@ -172,11 +170,8 @@ function create(){
 
     // Affichage du personnage
     player = this.physics.add.sprite(64, 576, 'perso');
-    customPlayerBound = player.body.setBoundsRectangle((0,0,player.body.height,player.body.halfHeight));
-    //customPlayerBound = player.body.setBoundsRectangle((0,0,1600,1600));
-    console.log(customPlayerBound);
-    //console.log(player.body.customBoundsRectangle);
 
+    player.setGravityY(500);
 
     // Affichage de l'ennemi
 
@@ -196,8 +191,36 @@ function create(){
 
 
 
-    speed1 = Phaser.Math.GetSpeed(300,3);
-    speed2 = Phaser.Math.GetSpeed(-300,3);
+    fauconA = this.physics.add.image(750,375,"faucon");
+
+    let enemy2 = this.physics.add.image(500,500,"faucon");
+
+
+
+
+    this.tweens.add({
+        targets : fauconA,
+        x: 500,
+        duration: 3000,
+        repeat : -1,
+        yoyo : true
+    });
+
+
+    this.time.addEvent({
+        delay: 3000,
+        repeat: -1,
+        callback : function (){
+            fauconA.scaleX *=-1;
+        }
+    });
+
+
+
+
+
+
+
 
     // Affichage des calques décoratifs
 
@@ -246,8 +269,9 @@ function create(){
     keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     // Faire en sorte que le joueur collide avec les bords du monde
-    player.setCollideWorldBounds(true);
+    /*player.setCollideWorldBounds(true);
     this.physics.world.setBounds(0,0,1600,1600);
+    */
 
     // Faire en sorte que le joueur collide avec les platformes
     this.physics.add.collider(player, calque_pente, classique, null, this);
@@ -255,6 +279,7 @@ function create(){
     this.physics.add.collider(player, calque_mur_glace, classique, null, this);
     this.physics.add.collider(player, calque_plateforme, classique, null, this);
     this.physics.add.collider(player, calque_mortel);
+
     
 
 
@@ -311,6 +336,10 @@ function create(){
     // le joueur perd immédiatement la partie s'il touche un danger mortel (grande pique et grande algue)
 
 
+    // le personnage perd de la vie s'il touche un ennemi
+    this.physics.add.overlap(player,fauconA,collisionfauconA,null,this);
+
+
     // création des différents niveaux de vie dans le thermomètre
 
     this.anims.create({
@@ -347,7 +376,7 @@ function create(){
 }
 
 
-function update(time,delta){
+function update(){
 
     if (player.x <= 16){ player.x=16}
     if (player.x >= 1584){ player.x=1584}
@@ -373,24 +402,8 @@ function update(time,delta){
         //(on saute)
     }
 
-    /*ennemy1.x += speed1 * delta;
 
-    if (ennemy1.x > 500)
-    {
-        ennemy1.x = 64;
-        
-    }
 
-    this.ennemiTween = this.tweens.add({
-        targets: this.ennemy3,
-        x: 700,
-        duration: 2000,
-        ease: 'Linear',
-        yoyo: true,
-        repeat: -1
-    });
-    */
-    
     // animation de la jauge de vie
 
     if (playerLife == 5){
@@ -568,4 +581,129 @@ function glisse (){
 
 function classique (){
     playerVitesse = 1
+}
+
+// Gestion de l'intéraction Joueur Ennemi
+function collisionfauconA() {
+
+    var boundsPlayer = player.getBounds();
+    var boundsEnemy = fauconA.getBounds();
+
+    if (fauconA.body.touching.down) {
+        if (playerDegat == false){
+
+            playerLife = playerLife - 1;
+         
+            playerDegat = true;
+            playerOpacity = true;
+    
+            // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+    
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+
+            player.setVelocityY(50)
+            
+        }
+    }
+    
+    // savoir si le bord gauche touche le bord gauche
+    // en prenant de la hit box, mettre les deux en >
+    // en prenant compte du problème de hit box mettre le deuxième en <
+
+
+    if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        if (playerDegat == false){
+
+            playerLife = playerLife - 1;
+         
+            playerDegat = true;
+            playerOpacity = true;
+    
+            // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+    
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    
+    // savoir si le bord droit du joueur touche le bord gauche de l'ennemi
+
+    // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
+    // on prend des degats si on est fixe
+
+    // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
+
+
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right <= boundsEnemy.left + 1) {
+        if (playerDegat == false){
+
+            playerLife = playerLife - 1;
+         
+            playerDegat = true;
+            playerOpacity = true;
+    
+            // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+    
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        
+        }
+        
+    }
+    
+    if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
+
+        fauconA.destroy();
+        player.setVelocityY(-50)
+    }
+
 }
