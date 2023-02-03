@@ -51,6 +51,17 @@ function preload(){
 var platforms;
 
 var player;
+var playerLife = 5 ;
+var playerOpacity ;
+var playerDegat = false ;
+var playerVitesse = 1 ;
+
+var wallJumpGauche = false;
+var wallJumpDroite = false;
+var sautDispo = true;
+var hauteurSaut = -380;
+
+
 
 var speed1;
 var speed2;
@@ -160,15 +171,30 @@ function create(){
     );
 
     // Affichage du personnage
-    player = this.physics.add.sprite(100, 450, 'perso');
+    player = this.physics.add.sprite(64, 576, 'perso');
+    customPlayerBound = player.body.setBoundsRectangle((0,0,player.body.height,player.body.halfHeight));
+    //customPlayerBound = player.body.setBoundsRectangle((0,0,1600,1600));
+    console.log(customPlayerBound);
+    //console.log(player.body.customBoundsRectangle);
 
 
     // Affichage de l'ennemi
-    ennemy1 = this.add.image(400,375,"poisson").setOrigin(0);
 
-    ennemy2 = this.add.image(400,350,"faucon").setOrigin(0);
-    
-    ennemy3 = this.add.image(400,325,"renard").setOrigin(0);
+    ennemi1 = this.add.image(750,375,"faucon").setOrigin(0);
+
+    ennemi2 = this.add.image(1075,180,"faucon").setOrigin(0);
+
+    ennemi3 = this.add.image(1090,1530,"poisson").setOrigin(0);
+
+    ennemi4 = this.add.image(1360,1245,"poisson").setOrigin(0);
+
+    ennemi5 = this.add.image(1287,896,"renard").setOrigin(0);
+
+    ennemi6 = this.add.image(325,1120,"renard").setOrigin(0);
+
+    ennemi7 = this.add.image(485,896,"renard").setOrigin(0);
+
+
 
     speed1 = Phaser.Math.GetSpeed(300,3);
     speed2 = Phaser.Math.GetSpeed(-300,3);
@@ -215,19 +241,19 @@ function create(){
     scoreText=this.add.text(16,16,'score: 0',{fontSize:'32px',fill:'#000'});
         
     // Création de la détéction du clavier
+
     cursors = this.input.keyboard.createCursorKeys();
+    keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     // Faire en sorte que le joueur collide avec les bords du monde
     player.setCollideWorldBounds(true);
+    this.physics.world.setBounds(0,0,1600,1600);
 
     // Faire en sorte que le joueur collide avec les platformes
-    this.physics.add.collider(player, calque_pente);
-    this.physics.add.collider(player, calque_grotte);
-    this.physics.add.collider(player, calque_glace);
-    this.physics.add.collider(player, calque_mur_glace);
-    this.physics.add.collider(player, calque_neige);
-    this.physics.add.collider(player, calque_plateforme);
-    this.physics.add.collider(player, calque_danger);
+    this.physics.add.collider(player, calque_pente, classique, null, this);
+    this.physics.add.collider(player, calque_grotte, classique, null, this);
+    this.physics.add.collider(player, calque_mur_glace, classique, null, this);
+    this.physics.add.collider(player, calque_plateforme, classique, null, this);
     this.physics.add.collider(player, calque_mortel);
     
 
@@ -235,7 +261,7 @@ function create(){
     // afficher les animations du personnage lorsqu'il se déplace
     this.anims.create({
         key: 'left',
-        frames: this.anims.generateFrameNumbers('perso', {start:0,end:12}),
+        frames: this.anims.generateFrameNumbers('perso', {start:0,end:11}),
         frameRate: 10,
         repeat: -1
     });
@@ -247,41 +273,94 @@ function create(){
     });
     this.anims.create({
         key: 'right',
-        frames: this.anims.generateFrameNumbers('perso', {start:14,end:25}),
+        frames: this.anims.generateFrameNumbers('perso', {start:13,end:25}),
         frameRate: 10,
         repeat: -1
     });
 
-
+    
     // création de la caméra
     // taille de la caméra
     this.cameras.main.setSize(708,400);
+
 
     // faire en sorte que la caméra suive le personnage
     this.cameras.main.startFollow(player);
 
     this.cameras.main.setDeadzone(100,100);
     this.cameras.main.setBounds(0,0,1600,1600);
+    
 
     // affichage de l'interface utilisateur
     this.add.sprite(0,0,"interface").setOrigin(0,0).setScrollFactor(0);
     lifeUI = this.add.sprite(14,87, "niveauVie").setOrigin(0,0).setScrollFactor(0);
     this.add.sprite(0,0,"dessus").setOrigin(0,0).setScrollFactor(0);
 
+    // Le personnage recevra des dégâts s'il touche le calque danger
+    this.physics.add.collider(player, calque_danger, degat, null, this);
 
+    // le personnage avancera doucement s'il est dans la neige
+    this.physics.add.collider(player, calque_neige, ralentir, null, this);
+
+    // le personnage glissera s'il se déplace sur la glace
+    this.physics.add.collider(player, calque_glace, glisse, null, this);
+
+    // le personnage sera ralentit s'il est dans l'eau
+
+
+    // le joueur perd immédiatement la partie s'il touche un danger mortel (grande pique et grande algue)
+
+
+    // création des différents niveaux de vie dans le thermomètre
+
+    this.anims.create({
+        key: 'vie5',
+        frames: [{ key: 'niveauVie' , frame :  0}],
+    })
+
+    this.anims.create({
+        key: 'vie4',
+        frames: [{ key: 'niveauVie' , frame :  1}],
+    })
+
+    this.anims.create({
+        key: 'vie3',
+        frames: [{ key: 'niveauVie' , frame :  2}],
+    })
+
+    this.anims.create({
+        key: 'vie2',
+        frames: [{ key: 'niveauVie' , frame :  3}],
+    })
+
+    this.anims.create({
+        key: 'vie1',
+        frames: [{ key: 'niveauVie' , frame :  4}],
+    })
+
+    this.anims.create({
+        key: 'vie0',
+        frames: [{ key: 'niveauVie' , frame :  5}],
+    })
+
+    
 }
 
 
 function update(time,delta){
 
+    if (player.x <= 16){ player.x=16}
+    if (player.x >= 1584){ player.x=1584}
+
+
     if (gameOver){return;}
 
     if (cursors.left.isDown){ //si la touche gauche est appuyée
-        player.setVelocityX(-220); //alors vitesse négative en X
+        player.setVelocityX(-220 / playerVitesse); //alors vitesse négative en X
         player.anims.play('left', true); //et animation => gauche
     }
     else if (cursors.right.isDown){ //sinon si la touche droite est appuyée
-        player.setVelocityX(220); //alors vitesse positive en X
+        player.setVelocityX(220 / playerVitesse); //alors vitesse positive en X
         player.anims.play('right', true); //et animation => droite
     }
     else{ // sinon
@@ -294,7 +373,7 @@ function update(time,delta){
         //(on saute)
     }
 
-    ennemy1.x += speed1 * delta;
+    /*ennemy1.x += speed1 * delta;
 
     if (ennemy1.x > 500)
     {
@@ -310,5 +389,183 @@ function update(time,delta){
         yoyo: true,
         repeat: -1
     });
+    */
     
+    // animation de la jauge de vie
+
+    if (playerLife == 5){
+        lifeUI.anims.play('vie5', true);
+    }
+    if (playerLife == 4){
+        lifeUI.anims.play('vie4', true);
+    }
+    if (playerLife == 3){
+        lifeUI.anims.play('vie3', true);
+    }
+    if (playerLife == 2){
+        lifeUI.anims.play('vie2', true);
+    }
+    if (playerLife == 1){
+        lifeUI.anims.play('vie1', true);
+    }
+    if (playerLife == 0){
+        lifeUI.anims.play('vie0', true);
+    }
+
+
+    //Interaction murs
+    //déverouillage des touches
+    function lockTouches(){toucheLock = true;}
+    //déverouillage du wall jump
+    function lockWallJump(){wallJumpLock = true;}
+    //Optimisé, latéralisation finie!
+    function wallGrab(){
+    //grimpe si le gameplay 3 est débloqué                    
+    if ((clavier.left.isDown ||clavier.right.isDown) && gameplayLevel >=3){
+        player.setVelocityY(-55);
+        player.setVelocityX(0);
+    } 
+    else{
+        player.setVelocityY(-5);
+        player.setVelocityX(0);
+    }
+    //saute si le gameplay 2 est débloqué
+    if (clavier.up.isDown && wallJumpLock){
+        //bloquage des touches pour éviter interférence 
+        toucheLock = false;
+        //début cooldown wall jump    
+        wallJumpLock = false;
+        //paramètres d'éjection
+        if (clavier.right.isDown){player.setVelocityX(-150);}
+        else {player.setVelocityX(150);} 
+
+        player.setVelocityY(-300); 
+        //fin bloquage des touches          
+        setTimeout(lockTouches, 200)
+        //fin du cooldown wall jump
+        setTimeout(lockWallJump, 1000)
+    }
+                }
+
+
+    /*
+
+    // SAUT
+
+    if(cursors.up.isUp && playerCanJump==false){
+        playerCanJump = true;
+    }
+
+    if (cursors.up.isDown && player.body.blocked.down && playerCanJump){
+        //si touche haut appuyée ET que le perso touche le sol
+        player.setVelocityY(-playerJump); //alors vitesse verticale négative
+        //(on saute)
+        playerCanJump = false;
+    }
+
+    // WALLJUMP
+
+    if (player.body.onWall() && !player.body.blocked.down &&  !keySpace.isDown){                //Si le joueur est contre un mur
+
+        player.setVelocityY(50);
+
+        if(cursors.up.isDown && playerCanJump){                      //Et qu'il appuit sur SAUTER,
+            player.setVelocityY(-playerJump);
+            playerCanJump = false;
+            if(customPlayerBound.blocked.right){
+                player.setVelocityX(-100);
+                playerCanRight = false;
+
+                this.time.delayedCall(250, () => {
+                    playerCanRight = true;
+                });
+            }                                       // Il est repoussé dans la direction opposé et ne
+            if(customPlayerBound.blocked.left){     // et ne peut qu'aller dans cette dernière pendant
+                player.setVelocityX(100);           // un certain temps court
+                playerCanLeft = false;
+
+                this.time.delayedCall(250, () => {
+                    playerCanLeft = true;
+                });
+            }
+        }
+    }
+    else {
+        player.body.setGravityY(100);
+    }
+
+    // ESCALADE
+
+    if (player.body.onWall() && keySpace.isDown){       //Si le joueur est contre un mur et appuyer sur SPACE
+
+        if(cursors.up.isDown){
+             player.setVelocityY(-75);
+        }
+        else if(cursors.down.isDown){
+            player.setVelocityY(175);
+        }
+        else{
+            player.setVelocityY(0);
+            player.body.setAllowGravity(false);
+        }
+    }
+    else {
+        player.body.setGravityY(100);
+        player.body.setAllowGravity(true);
+    }
+
+    */
+
+
+
+}
+
+function degat (){
+
+    if (playerDegat == false){
+
+        playerLife = playerLife - 1;
+     
+        playerDegat = true;
+        playerOpacity = true;
+
+        // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
+        this.time.addEvent({        
+            delay : 100,
+            callback : () => {
+                if(playerOpacity){
+                    player.alpha = 0.25;
+                    playerOpacity = false
+                }
+                else {
+                    player.alpha = 1;
+                    playerOpacity = true;
+                }
+            },
+            repeat : 19
+        })
+
+        this.time.delayedCall(2000, () => {
+            playerDegat = false;
+            player.alpha = 1;
+        });  
+
+    }
+
+}
+
+function ralentir (){
+
+    playerVitesse = 2
+
+}
+
+function glisse (){
+
+    playerVitesse = 1
+
+}
+
+function classique (){
+    playerVitesse = 1
 }
