@@ -83,7 +83,7 @@
  </tile>
  <tile id="20">
   <properties>
-   <property name="estSolide" type="bool" value="false"/>
+   <property name="estSolide" type="bool" value="true"/>
   </properties>
  </tile>
  <tile id="21">
@@ -238,12 +238,12 @@
  </tile>
  <tile id="71">
   <properties>
-   <property name="estSolide" type="bool" value="false"/>
+   <property name="estSolide" type="bool" value="true"/>
   </properties>
  </tile>
  <tile id="72">
   <properties>
-   <property name="estSolide" type="bool" value="false"/>
+   <property name="estSolide" type="bool" value="true"/>
   </properties>
  </tile>
  <tile id="73">
@@ -648,12 +648,12 @@
  </tile>
  <tile id="215">
   <properties>
-   <property name="estSolide" type="bool" value="false"/>
+   <property name="estSolide" type="bool" value="true"/>
   </properties>
  </tile>
  <tile id="216">
   <properties>
-   <property name="estSolide" type="bool" value="false"/>
+   <property name="estSolide" type="bool" value="true"/>
   </properties>
  </tile>
  <tile id="217">
