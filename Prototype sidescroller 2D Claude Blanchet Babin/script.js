@@ -1,3 +1,4 @@
+// configuration du moteur Phaser
 var config = {
     type: Phaser.AUTO,
     width: 1600, height: 1600,
@@ -12,7 +13,7 @@ var config = {
 
 new Phaser.Game(config);
 
-
+// préchrgement de tous les éléments nécessaires au fonctionnement du jeu
 function preload(){
 
     // chargement de la carte
@@ -45,51 +46,49 @@ function preload(){
     // chargement de l'interface et du collectable
     this.load.image("piece","assetsjeu/images/piece.png")
     this.load.image("ui","assetsjeu/images/ui.png")
+    //ajouter piolet ici
 }
 
 // création des variables
-var platforms;
 
+// variables joueur
 var player;
 var playerLife = 5 ;
 var playerOpacity ;
 var playerDegat = false ;
 var playerVitesse = 1 ;
-var hit = false;
+var playerGravity = 500;
+var playerSaut = 325;
 
-
-
-var wallJumpGauche = false;
-var wallJumpDroite = false;
-var sautDispo = true;
-var hauteurSaut = -380;
-
+// autres variables
+var platforms;
 var cursors;
 var score = 0;
 var scoreText;
 var gameOver = false;
 
+// création du niveau
 function create(){
 
-    //this.style.border = "thick solid #0000FF";
-
-    // Chargement de la carte 
+    // chargement de la carte 
     carteDuNiveau = this.add.tilemap("carte");
 
-    // Chargement du jeu de tuile
+    // chargement du jeu de tuile
     tileset = carteDuNiveau.addTilesetImage(
         "Tileset premier niveau partie 2",
         "Phaser_tuilesdejeu"
     );
     
-    // Affichage du background
-
+    // affichage du background
     this.add.image(0,0,"fond1").setOrigin(0,0);
     this.add.image(0,0,"fond2").setOrigin(0,0);
     this.add.image(0,0,"fond3").setOrigin(0,0);
     this.add.image(0,0,"fond4").setOrigin(0,0);
     this.add.image(0,0,"fond5").setOrigin(0,0);
 
+    // affichage du background en prenant en compte la parllaxe
+    // la parallaxe n'intervient pas sur le premier plan car celui n'est pas compatible
+    // en effet le décor d'un biome se retrouve dans celui d'u autre biome
     this.backgroundPrallax = this.add.tileSprite(0,0,1600,1600,"fond1");
     this.backgroundPrallax.setOrigin(0,0);
     this.backgroundPrallax.setScrollFactor(1,1);
@@ -111,7 +110,7 @@ function create(){
     this.premierPlanPrallax.setScrollFactor(1,1);
     
 
-    // Affichage des calques interactifs
+    // affichage des calques interactifs
 
     calque_pente = carteDuNiveau.createLayer(
         "pente",
@@ -168,13 +167,12 @@ function create(){
         tileset
     );
 
-    // Affichage du personnage
+    // affichage du personnage
     player = this.physics.add.sprite(64, 576, 'perso');
+    player.setGravityY(playerGravity); 
 
-    player.setGravityY(500);
-
-    // Affichage de l'ennemi
-
+    // affichage de l'ennemi
+    // préparation de l'emplacement des différents ennemis
     ennemi1 = this.add.image(750,375,"faucon").setOrigin(0);
 
     ennemi2 = this.add.image(1075,180,"faucon").setOrigin(0);
@@ -189,15 +187,10 @@ function create(){
 
     ennemi7 = this.add.image(485,896,"renard").setOrigin(0);
 
-
-
+    // affichage de l'ennemi interactif
     fauconA = this.physics.add.image(750,375,"faucon");
 
-    let enemy2 = this.physics.add.image(500,500,"faucon");
-
-
-
-
+    // faire en sorte que l'ennemi se déplace en ligne et qu'il fasse des allers-retours
     this.tweens.add({
         targets : fauconA,
         x: 500,
@@ -206,7 +199,7 @@ function create(){
         yoyo : true
     });
 
-
+    // faire en sorte que l'ennemi se retourne lorsqu'il est au bout de son parcours
     this.time.addEvent({
         delay: 3000,
         repeat: -1,
@@ -215,14 +208,8 @@ function create(){
         }
     });
 
-
-
-
-
-
-
-
-    // Affichage des calques décoratifs
+    // reprise de l'affichage des calques
+    // affichage des calques décoratifs
 
     calque_decor_eau = carteDuNiveau.createLayer(
         "decor eau",
@@ -249,7 +236,7 @@ function create(){
         tileset
     );
 
-    // Collision des plateformes
+    // collision des plateformes
     calque_pente.setCollisionByProperty({ estSolide: true });
     calque_grotte.setCollisionByProperty({ estSolide: true });
     calque_glace.setCollisionByProperty({ estSolide: true });
@@ -260,34 +247,33 @@ function create(){
     calque_mortel.setCollisionByProperty({ estSolide: true });
     
 
-    // Affiche un texte à l’écran, pour le score
+    // affiche un texte à l’écran, pour le score
     scoreText=this.add.text(16,16,'score: 0',{fontSize:'32px',fill:'#000'});
         
-    // Création de la détéction du clavier
-
+    // création de la détéction du clavier
     cursors = this.input.keyboard.createCursorKeys();
+    // intégration de la barre espace
     keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    // Faire en sorte que le joueur collide avec les bords du monde
-    /*player.setCollideWorldBounds(true);
+    // faire en sorte que le joueur collide avec les bords du monde
+    // n'est pas compatible avec le fait que le personnage doit pouvoir sauter par dessus l'écran pour avancer à certains endroits
+    // voir les premières lignes de la fonction update pour plus d'informations
+    /*
+    player.setCollideWorldBounds(true);
     this.physics.world.setBounds(0,0,1600,1600);
     */
 
-    // Faire en sorte que le joueur collide avec les platformes
+    // faire en sorte que le joueur collide avec les platformes
     this.physics.add.collider(player, calque_pente, classique, null, this);
     this.physics.add.collider(player, calque_grotte, classique, null, this);
     this.physics.add.collider(player, calque_mur_glace, classique, null, this);
     this.physics.add.collider(player, calque_plateforme, classique, null, this);
-    this.physics.add.collider(player, calque_mortel);
-
-    
-
 
     // afficher les animations du personnage lorsqu'il se déplace
     this.anims.create({
         key: 'left',
         frames: this.anims.generateFrameNumbers('perso', {start:0,end:11}),
-        frameRate: 10,
+        frameRate: 15,
         repeat: -1
     });
 
@@ -299,41 +285,39 @@ function create(){
     this.anims.create({
         key: 'right',
         frames: this.anims.generateFrameNumbers('perso', {start:13,end:25}),
-        frameRate: 10,
+        frameRate: 15,
         repeat: -1
     });
 
-    
     // création de la caméra
     // taille de la caméra
     this.cameras.main.setSize(708,400);
 
-
-    // faire en sorte que la caméra suive le personnage
+    // faire en sorte que la caméra suive le personnage et qu'elle ne sorte pas de l'écran
     this.cameras.main.startFollow(player);
-
     this.cameras.main.setDeadzone(100,100);
     this.cameras.main.setBounds(0,0,1600,1600);
     
-
     // affichage de l'interface utilisateur
     this.add.sprite(0,0,"interface").setOrigin(0,0).setScrollFactor(0);
     lifeUI = this.add.sprite(14,87, "niveauVie").setOrigin(0,0).setScrollFactor(0);
     this.add.sprite(0,0,"dessus").setOrigin(0,0).setScrollFactor(0);
 
+    // séparation des calques selon l'effet que recevra le personnage
     // Le personnage recevra des dégâts s'il touche le calque danger
     this.physics.add.collider(player, calque_danger, degat, null, this);
 
     // le personnage avancera doucement s'il est dans la neige
     this.physics.add.collider(player, calque_neige, ralentir, null, this);
 
-    // le personnage glissera s'il se déplace sur la glace
-    this.physics.add.collider(player, calque_glace, glisse, null, this);
+    // le personnage aura de l'inertie s'il se déplace sur la glace
+    this.physics.add.collider(player, calque_glace,glisse, null, this);
 
     // le personnage sera ralentit s'il est dans l'eau
 
 
     // le joueur perd immédiatement la partie s'il touche un danger mortel (grande pique et grande algue)
+    this.physics.add.collider(player, calque_mortel,mort, null, this);
 
 
     // le personnage perd de la vie s'il touche un ennemi
@@ -341,7 +325,6 @@ function create(){
 
 
     // création des différents niveaux de vie dans le thermomètre
-
     this.anims.create({
         key: 'vie5',
         frames: [{ key: 'niveauVie' , frame :  0}],
@@ -371,25 +354,58 @@ function create(){
         key: 'vie0',
         frames: [{ key: 'niveauVie' , frame :  5}],
     })
-
-    
 }
 
-
+// mise à jour des éléments au fil de l'avancement du joueur dans le niveau
 function update(){
 
+    // faire en sorte que le personnage ne puisse pas dépasser les bords gauche et droit
+    // inutile pour le bord inférieur car déjà bloquer par les plateformes
+    // inutile pour le bord supérieur car doit pouvoir sauter
     if (player.x <= 16){ player.x=16}
     if (player.x >= 1584){ player.x=1584}
 
+    // vérifier la position du personnage pour changer sa gravité s'il est dans l'eau
+    if (player.x >=1408 && player.y >= 672){
+        player.setGravityY(100);
+        playerSaut = 150;
+        playerVitesse = 150;
+    }
 
-    if (gameOver){return;}
+    if (player.y >= 1184){
+        player.setGravityY(100);
+        playerSaut = 150;
+        playerVitesse = 150;
+    }
 
+    // remettre la gravité standard lorsqu'il sort de l'eau
+    if (player.x <= 1280 && player.y <= 1152){
+        player.setGravityY(500);
+        playerSaut = 325;
+    }
+
+
+    // mise en place du game over
+    if (playerLife == -1){
+        gameOver = true;
+    }
+
+    if(gameOver){
+        perdu=this.add.text(175,80, "GAME OVER",{fontSize:'75px',fill:'#FF0000'}).setScrollFactor(0);
+        relace=this.add.text(115,150, "appuyer sur F5 pour recommencer",{fontSize:'30px',fill:'#FF0000'}).setScrollFactor(0);
+        lifeUI.destroy();
+        return;
+    }
+
+
+
+    // ajout des moyens de déplacement du personnage
     if (cursors.left.isDown){ //si la touche gauche est appuyée
-        player.setVelocityX(-220 / playerVitesse); //alors vitesse négative en X
+        player.setVelocityX(- playerVitesse); //alors vitesse négative en X
         player.anims.play('left', true); //et animation => gauche
     }
     else if (cursors.right.isDown){ //sinon si la touche droite est appuyée
-        player.setVelocityX(220 / playerVitesse); //alors vitesse positive en X
+        player.setVelocityX(playerVitesse); //alors vitesse positive en X
         player.anims.play('right', true); //et animation => droite
     }
     else{ // sinon
@@ -398,14 +414,11 @@ function update(){
     }
     if (cursors.up.isDown && (player.body.blocked.down || player.body.blocked.right || player.body.blocked.left)){
         //si touche haut appuyée ET que le perso touche le sol
-        player.setVelocityY(-325); //alors vitesse verticale négative
+        player.setVelocityY(-playerSaut); //alors vitesse verticale négative
         //(on saute)
     }
 
-
-
     // animation de la jauge de vie
-
     if (playerLife == 5){
         lifeUI.anims.play('vie5', true);
     }
@@ -425,124 +438,22 @@ function update(){
         lifeUI.anims.play('vie0', true);
     }
 
-
-    //Interaction murs
-    //déverouillage des touches
-    function lockTouches(){toucheLock = true;}
-    //déverouillage du wall jump
-    function lockWallJump(){wallJumpLock = true;}
-    //Optimisé, latéralisation finie!
-    function wallGrab(){
-    //grimpe si le gameplay 3 est débloqué                    
-    if ((clavier.left.isDown ||clavier.right.isDown) && gameplayLevel >=3){
-        player.setVelocityY(-55);
-        player.setVelocityX(0);
-    } 
-    else{
-        player.setVelocityY(-5);
-        player.setVelocityX(0);
-    }
-    //saute si le gameplay 2 est débloqué
-    if (clavier.up.isDown && wallJumpLock){
-        //bloquage des touches pour éviter interférence 
-        toucheLock = false;
-        //début cooldown wall jump    
-        wallJumpLock = false;
-        //paramètres d'éjection
-        if (clavier.right.isDown){player.setVelocityX(-150);}
-        else {player.setVelocityX(150);} 
-
-        player.setVelocityY(-300); 
-        //fin bloquage des touches          
-        setTimeout(lockTouches, 200)
-        //fin du cooldown wall jump
-        setTimeout(lockWallJump, 1000)
-    }
-                }
-
-
-    /*
-
-    // SAUT
-
-    if(cursors.up.isUp && playerCanJump==false){
-        playerCanJump = true;
-    }
-
-    if (cursors.up.isDown && player.body.blocked.down && playerCanJump){
-        //si touche haut appuyée ET que le perso touche le sol
-        player.setVelocityY(-playerJump); //alors vitesse verticale négative
-        //(on saute)
-        playerCanJump = false;
-    }
-
     // WALLJUMP
-
-    if (player.body.onWall() && !player.body.blocked.down &&  !keySpace.isDown){                //Si le joueur est contre un mur
-
-        player.setVelocityY(50);
-
-        if(cursors.up.isDown && playerCanJump){                      //Et qu'il appuit sur SAUTER,
-            player.setVelocityY(-playerJump);
-            playerCanJump = false;
-            if(customPlayerBound.blocked.right){
-                player.setVelocityX(-100);
-                playerCanRight = false;
-
-                this.time.delayedCall(250, () => {
-                    playerCanRight = true;
-                });
-            }                                       // Il est repoussé dans la direction opposé et ne
-            if(customPlayerBound.blocked.left){     // et ne peut qu'aller dans cette dernière pendant
-                player.setVelocityX(100);           // un certain temps court
-                playerCanLeft = false;
-
-                this.time.delayedCall(250, () => {
-                    playerCanLeft = true;
-                });
-            }
-        }
-    }
-    else {
-        player.body.setGravityY(100);
-    }
-
-    // ESCALADE
-
-    if (player.body.onWall() && keySpace.isDown){       //Si le joueur est contre un mur et appuyer sur SPACE
-
-        if(cursors.up.isDown){
-             player.setVelocityY(-75);
-        }
-        else if(cursors.down.isDown){
-            player.setVelocityY(175);
-        }
-        else{
-            player.setVelocityY(0);
-            player.body.setAllowGravity(false);
-        }
-    }
-    else {
-        player.body.setGravityY(100);
-        player.body.setAllowGravity(true);
-    }
-
-    */
-
-
 
 }
 
 function degat (){
 
+    // vérifier que le cooldown de degat est disponible
     if (playerDegat == false){
 
+        // retirer de la vie au joueur
+        // répercuter directement dans la jauge de vie
         playerLife = playerLife - 1;
-     
         playerDegat = true;
         playerOpacity = true;
 
-        // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
+        // montrer l'invulnérabilité du personnage ne le faisant clignoter avec l'opacité
         this.time.addEvent({        
             delay : 100,
             callback : () => {
@@ -558,46 +469,72 @@ function degat (){
             repeat : 19
         })
 
+        // activation du cooldown de degat
         this.time.delayedCall(2000, () => {
             playerDegat = false;
             player.alpha = 1;
         });  
-
     }
-
 }
 
+// fonction intervenant dans le biome neige en extérieur
+// montrer que le personnage a du mal à avancer en le ralentissant
 function ralentir (){
-
-    playerVitesse = 2
-
+    playerVitesse = 150
 }
 
+// fonction permettant de faire glisser le personnage avec de l'inertie lorsqu'il se trouve dans le biome glace (sauf plateforme car cela rendrait le déplacement beaucoup trop difficile)
 function glisse (){
-
-    playerVitesse = 1
-
+    playerVitesse = 300
+    player.setFriction(0.05);
+    player.body.setFriction(0.05);
 }
 
+// fonction permettent de remettre les valeurs par défaut lorsque le personnage se trouve sur un calque sans altération
 function classique (){
-    playerVitesse = 1
+    playerVitesse = 300
 }
 
-// Gestion de l'intéraction Joueur Ennemi
+// fonction faisant perdre immédiatement le joueur
+function mort(){
+    playerLife = -1
+
+    // comme pour le reste des sources de dégât
+    // montrer malgré tout que le joueur prend des dégâts en le faisant clignoter
+
+    this.time.addEvent({        
+        delay : 100,
+        callback : () => {
+            if(playerOpacity){
+                player.alpha = 0.25;
+                playerOpacity = false
+            }
+            else {
+                player.alpha = 1;
+                playerOpacity = true;
+            }
+        },
+        repeat : 19
+    })
+}
+
+// gérer l'interaction entre le joueur et le faucon A
 function collisionfauconA() {
 
+    // repérer le bord des hitbox du joueur et de l'ennemi
     var boundsPlayer = player.getBounds();
     var boundsEnemy = fauconA.getBounds();
 
+    // repérer si le personnage touche le dessous de l'ennemi
     if (fauconA.body.touching.down) {
+
+        // lancement de la fonction degat
         if (playerDegat == false){
 
             playerLife = playerLife - 1;
-         
             playerDegat = true;
             playerOpacity = true;
     
-            // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
             this.time.addEvent({        
                 delay : 100,
                 callback : () => {
@@ -618,25 +555,23 @@ function collisionfauconA() {
                 player.alpha = 1;
             });
 
+            // repousser légèrement le personnage dans la direction opposée
             player.setVelocityY(50)
             
         }
     }
     
-    // savoir si le bord gauche touche le bord gauche
-    // en prenant de la hit box, mettre les deux en >
+    // savoir si le bord gauche touche le bord gauche (nécessaire suite au retournement de l'ennemi selon un axe de symétrie)
+    // en prenant compte de la hit box, mettre les deux en >
     // en prenant compte du problème de hit box mettre le deuxième en <
-
-
     if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        
         if (playerDegat == false){
 
             playerLife = playerLife - 1;
-         
             playerDegat = true;
             playerOpacity = true;
     
-            // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
             this.time.addEvent({        
                 delay : 100,
                 callback : () => {
@@ -660,22 +595,17 @@ function collisionfauconA() {
     }
     
     // savoir si le bord droit du joueur touche le bord gauche de l'ennemi
-
     // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
     // on prend des degats si on est fixe
-
     // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
-
-
-    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right <= boundsEnemy.left + 1) {
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right >= boundsEnemy.left + 1) {
+        
         if (playerDegat == false){
 
             playerLife = playerLife - 1;
-         
             playerDegat = true;
             playerOpacity = true;
     
-            // pendant ce temps, son opacité est modifié tous les 100ms pour montrer qu'il est invulnérable.
             this.time.addEvent({        
                 delay : 100,
                 callback : () => {
@@ -695,14 +625,18 @@ function collisionfauconA() {
                 playerDegat = false;
                 player.alpha = 1;
             });
-        
         }
-        
     }
     
+    // vérifier que le dessous du personnage vient frapper le dessus de l'ennemi
     if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
 
+        playerLife = playerLife + 1;
+
+        // montrer la victoire du personnage en faisant disparaitre l'ennemi
         fauconA.destroy();
+
+        // montrer le fait que le personnage vient de marcher sur l'ennemi en le faisant légèrement rebondir
         player.setVelocityY(-50)
     }
 
