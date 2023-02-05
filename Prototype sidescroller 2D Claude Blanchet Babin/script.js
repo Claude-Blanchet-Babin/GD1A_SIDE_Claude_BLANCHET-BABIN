@@ -6,8 +6,9 @@ var config = {
         default: 'arcade',
         arcade: {
         gravity: { y: 0 },
-        debug: true
+        debug: false
     }},
+    input:{gamepad:true},
     scene: {preload: preload, create: create, update: update }
 };
 
@@ -46,7 +47,8 @@ function preload(){
     // chargement de l'interface et du collectable
     this.load.image("piece","assetsjeu/images/piece.png")
     this.load.image("ui","assetsjeu/images/ui.png")
-    //ajouter piolet ici
+    this.load.image("pioletObj","assetsjeu/images/piolet_32.png")
+    this.load.image("pioletUI","assetsjeu/images/piolet_ui.png")
 }
 
 // création des variables
@@ -59,13 +61,21 @@ var playerDegat = false ;
 var playerVitesse = 1 ;
 var playerGravity = 500;
 var playerSaut = 325;
+var playerFace = 0;
+
+// variable controle
+var controller = false;
+var cursors;
 
 // autres variables
 var platforms;
-var cursors;
 var score = 0;
 var scoreText;
 var gameOver = false;
+var nombre = 0;
+var pioletAcquis = false;
+var lockTouche = false;
+
 
 // création du niveau
 function create(){
@@ -127,6 +137,11 @@ function create(){
         tileset
     );
 
+    calque_fin = carteDuNiveau.createLayer(
+        "fin",
+        tileset
+    );
+
     calque_mur_glace = carteDuNiveau.createLayer(
         "mur glace",
         tileset
@@ -173,6 +188,7 @@ function create(){
 
     // affichage de l'ennemi
     // préparation de l'emplacement des différents ennemis
+    /*
     ennemi1 = this.add.image(750,375,"faucon").setOrigin(0);
 
     ennemi2 = this.add.image(1075,180,"faucon").setOrigin(0);
@@ -186,14 +202,15 @@ function create(){
     ennemi6 = this.add.image(325,1120,"renard").setOrigin(0);
 
     ennemi7 = this.add.image(485,896,"renard").setOrigin(0);
+    */
 
     // affichage de l'ennemi interactif
-    fauconA = this.physics.add.image(750,375,"faucon");
+    fauconA = this.physics.add.image(800,390,"faucon");
 
     // faire en sorte que l'ennemi se déplace en ligne et qu'il fasse des allers-retours
     this.tweens.add({
         targets : fauconA,
-        x: 500,
+        x: 480,
         duration: 3000,
         repeat : -1,
         yoyo : true
@@ -207,6 +224,95 @@ function create(){
             fauconA.scaleX *=-1;
         }
     });
+
+    /*
+    fauconB = this.physics.add.image(1090,195,"faucon");
+    this.tweens.add({
+        targets : fauconB,
+        y: 20,
+        duration: 3000,
+        repeat : -1,
+        yoyo : true
+    });
+    */
+
+    /*
+    poissonA = this.physics.add.image(1376,1250,"poisson");
+    this.tweens.add({
+        targets : poissonA,
+        y: 1450,
+        duration: 4000,
+        repeat : -1,
+        yoyo : true
+    });
+    */
+
+    poissonB = this.physics.add.image(1106,1546,"poisson");
+    this.tweens.add({
+        targets : poissonB,
+        x: 900,
+        duration: 4000,
+        repeat : -1,
+        yoyo : true
+    });
+    this.time.addEvent({
+        delay: 4000,
+        repeat: -1,
+        callback : function (){
+            poissonB.scaleX *=-1;
+        }
+    });
+
+    renardA = this.physics.add.image(1316,912,"renard");
+    this.tweens.add({
+        targets : renardA,
+        x: 1200,
+        duration: 4000,
+        repeat : -1,
+        yoyo : true
+    });
+    this.time.addEvent({
+        delay: 4000,
+        repeat: -1,
+        callback : function (){
+            renardA.scaleX *=-1;
+        }
+    });
+
+    renardB = this.physics.add.image(350,1136,"renard");
+    this.tweens.add({
+        targets : renardB,
+        x: 100,
+        duration: 6000,
+        repeat : -1,
+        yoyo : true
+    });
+    this.time.addEvent({
+        delay: 6000,
+        repeat: -1,
+        callback : function (){
+            renardB.scaleX *=-1;
+        }
+    });
+
+    /*
+    renardC = this.physics.add.image(500,912,"renard");
+    this.tweens.add({
+        targets : renardC,
+        x: 380,
+        duration: 4000,
+        repeat : -1,
+        yoyo : true
+    });
+    this.time.addEvent({
+        delay: 4000,
+        repeat: -1,
+        callback : function (){
+            renardC.scaleX *=-1;
+        }
+    });
+    */
+
 
     // reprise de l'affichage des calques
     // affichage des calques décoratifs
@@ -226,10 +332,12 @@ function create(){
         tileset
     );
 
+    /*
     calque_collectable = carteDuNiveau.createLayer(
         "collectable",
         tileset
     );
+    */
 
     calque_eau = carteDuNiveau.createLayer(
         "eau",
@@ -240,20 +348,38 @@ function create(){
     calque_pente.setCollisionByProperty({ estSolide: true });
     calque_grotte.setCollisionByProperty({ estSolide: true });
     calque_glace.setCollisionByProperty({ estSolide: true });
+    calque_fin.setCollisionByProperty({ estSolide: true });
     calque_mur_glace.setCollisionByProperty({ estSolide: true });
     calque_neige.setCollisionByProperty({ estSolide: true });
     calque_plateforme.setCollisionByProperty({ estSolide: true });
     calque_danger.setCollisionByProperty({ estSolide: true });
     calque_mortel.setCollisionByProperty({ estSolide: true });
     
+    // affichage de l'objet (piolet) permettant de débloquer une nouvelle capacacité
+    piolet = this.physics.add.image(1420,35,"pioletObj");
 
-    // affiche un texte à l’écran, pour le score
-    scoreText=this.add.text(16,16,'score: 0',{fontSize:'32px',fill:'#000'});
-        
+    // affichage des pièces pouvant être ramassées pour faire monter le score
+    piece1 = this.physics.add.image(20,315,"piece");
+    piece2 = this.physics.add.image(770,80,"piece");
+    piece3 = this.physics.add.image(90,80,"piece");
+    piece4 = this.physics.add.image(930,35,"piece");
+    piece5 = this.physics.add.image(1550,1550,"piece");
+    piece6 = this.physics.add.image(592,1480,"piece");
+    piece7 = this.physics.add.image(112,1355,"piece");
+    piece8 = this.physics.add.image(1325,335,"piece");
+    piece9 = this.physics.add.image(1110,600,"piece");
+    piece10 = this.physics.add.image(879,840,"piece");
+    piece11 = this.physics.add.image(87,1050,"piece");
+
     // création de la détéction du clavier
     cursors = this.input.keyboard.createCursorKeys();
     // intégration de la barre espace
     keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+    // intégrer les commandes d'une manette
+    this.input.gamepad.once('connected', function (pad) {
+        controller = pad;
+    });
 
     // faire en sorte que le joueur collide avec les bords du monde
     // n'est pas compatible avec le fait que le personnage doit pouvoir sauter par dessus l'écran pour avancer à certains endroits
@@ -264,7 +390,7 @@ function create(){
     */
 
     // faire en sorte que le joueur collide avec les platformes
-    this.physics.add.collider(player, calque_pente, classique, null, this);
+    this.physics.add.collider(player, calque_pente, repousse, null, this);
     this.physics.add.collider(player, calque_grotte, classique, null, this);
     this.physics.add.collider(player, calque_mur_glace, classique, null, this);
     this.physics.add.collider(player, calque_plateforme, classique, null, this);
@@ -288,7 +414,7 @@ function create(){
         frameRate: 15,
         repeat: -1
     });
-
+    
     // création de la caméra
     // taille de la caméra
     this.cameras.main.setSize(708,400);
@@ -298,9 +424,12 @@ function create(){
     this.cameras.main.setDeadzone(100,100);
     this.cameras.main.setBounds(0,0,1600,1600);
     
+    (175,80, "GAME OVER",{fontSize:'75px',fill:'#FF0000'})
     // affichage de l'interface utilisateur
     this.add.sprite(0,0,"interface").setOrigin(0,0).setScrollFactor(0);
     lifeUI = this.add.sprite(14,87, "niveauVie").setOrigin(0,0).setScrollFactor(0);
+    pioletInterface = this.add.image(0,0,"pioletUI").setVisible(false).setOrigin(0,0).setScrollFactor(0);
+    score=this.add.text(50,21,"0",{fontSize:'32px',fill:'#FF7F00', fontWeight : 'bold'}).setOrigin(0,0).setScrollFactor(0);
     this.add.sprite(0,0,"dessus").setOrigin(0,0).setScrollFactor(0);
 
     // séparation des calques selon l'effet que recevra le personnage
@@ -313,15 +442,44 @@ function create(){
     // le personnage aura de l'inertie s'il se déplace sur la glace
     this.physics.add.collider(player, calque_glace,glisse, null, this);
 
-    // le personnage sera ralentit s'il est dans l'eau
-
+    // le personnage sera repoussé s'il tombe sur une pente de neige
+    this.physics.add.collider(player, calque_pente, repousse, null, this);
 
     // le joueur perd immédiatement la partie s'il touche un danger mortel (grande pique et grande algue)
     this.physics.add.collider(player, calque_mortel,mort, null, this);
 
+    // le joueur sera informé de sa victoire s'il touche le calque de fin
+    this.physics.add.collider(player, calque_fin,victory, null, this);
 
     // le personnage perd de la vie s'il touche un ennemi
     this.physics.add.overlap(player,fauconA,collisionfauconA,null,this);
+    /*this.physics.add.overlap(player,fauconB,collisionfauconB,null,this);
+    */
+    /*this.physics.add.overlap(player,poissonA,collisionpoissonA,null,this);
+    */
+    this.physics.add.overlap(player,poissonB,collisionpoissonB,null,this);
+    this.physics.add.overlap(player,renardA,collisionrenardA,null,this);
+    this.physics.add.overlap(player,renardB,collisionrenardB,null,this);
+    /*this.physics.add.overlap(player,renardC,collisionrenardC,null,this);
+    */
+    
+
+    // le score change si le personnage attrape une pièce
+    this.physics.add.overlap(player,piece1,collecte1,null,this);
+    this.physics.add.overlap(player,piece2,collecte2,null,this);
+    this.physics.add.overlap(player,piece3,collecte3,null,this);
+    this.physics.add.overlap(player,piece4,collecte4,null,this);
+    this.physics.add.overlap(player,piece5,collecte5,null,this);
+    this.physics.add.overlap(player,piece6,collecte6,null,this);
+    this.physics.add.overlap(player,piece7,collecte7,null,this);
+    this.physics.add.overlap(player,piece8,collecte8,null,this);
+    this.physics.add.overlap(player,piece9,collecte9,null,this);
+    this.physics.add.overlap(player,piece10,collecte10,null,this);
+    this.physics.add.overlap(player,piece11,collecte11,null,this);
+
+    // le personnage obtient une nouvelle compétence s'il ramasse le piolet
+    // il pourra désormais s'accrocher au mur
+    this.physics.add.overlap(player,piolet,obtention,null,this);
 
 
     // création des différents niveaux de vie dans le thermomètre
@@ -392,27 +550,26 @@ function update(){
 
     if(gameOver){
         perdu=this.add.text(175,80, "GAME OVER",{fontSize:'75px',fill:'#FF0000'}).setScrollFactor(0);
-        relace=this.add.text(115,150, "appuyer sur F5 pour recommencer",{fontSize:'30px',fill:'#FF0000'}).setScrollFactor(0);
+        relance=this.add.text(115,150, "appuyer sur F5 pour recommencer",{fontSize:'30px',fill:'#FF0000'}).setScrollFactor(0);
         lifeUI.destroy();
         return;
     }
 
 
-
     // ajout des moyens de déplacement du personnage
-    if (cursors.left.isDown){ //si la touche gauche est appuyée
+    if ((cursors.left.isDown || controller.left) && lockTouche == false){ //si la touche gauche est appuyée
         player.setVelocityX(- playerVitesse); //alors vitesse négative en X
         player.anims.play('left', true); //et animation => gauche
     }
-    else if (cursors.right.isDown){ //sinon si la touche droite est appuyée
+    else if ((cursors.right.isDown || controller.right) && lockTouche == false){ //sinon si la touche droite est appuyée
         player.setVelocityX(playerVitesse); //alors vitesse positive en X
         player.anims.play('right', true); //et animation => droite
     }
     else{ // sinon
-        player.setVelocityX(0); //vitesse nulle
+        player.setVelocityX(playerFace); //vitesse nulle
         player.anims.play('turn'); //animation fait face caméra
     }
-    if (cursors.up.isDown && (player.body.blocked.down || player.body.blocked.right || player.body.blocked.left)){
+    if ((cursors.up.isDown || controller.up) && (player.body.blocked.down || player.body.blocked.right || player.body.blocked.left) && lockTouche == false){
         //si touche haut appuyée ET que le perso touche le sol
         player.setVelocityY(-playerSaut); //alors vitesse verticale négative
         //(on saute)
@@ -437,7 +594,7 @@ function update(){
     if (playerLife == 0){
         lifeUI.anims.play('vie0', true);
     }
-
+    
     // WALLJUMP
 
 }
@@ -481,6 +638,7 @@ function degat (){
 // montrer que le personnage a du mal à avancer en le ralentissant
 function ralentir (){
     playerVitesse = 150
+    playerFace = 0
 }
 
 // fonction permettant de faire glisser le personnage avec de l'inertie lorsqu'il se trouve dans le biome glace (sauf plateforme car cela rendrait le déplacement beaucoup trop difficile)
@@ -490,32 +648,134 @@ function glisse (){
     player.body.setFriction(0.05);
 }
 
+// fonction repoussant le joueur vers la gauche lorsqu'il est sur une pente avec de la neige
+function repousse (){
+    player.setVelocityY(-10);
+    player.setVelocityX(-100);
+    playerFace= -100
+
+    lockTouche = true
+
+    // Désactiver les contrôles pendant 5 secondes
+    setTimeout(() => {
+        lockTouche = false;
+    },4000);
+}
+
 // fonction permettent de remettre les valeurs par défaut lorsque le personnage se trouve sur un calque sans altération
 function classique (){
     playerVitesse = 300
+    playerFace = 0
 }
 
 // fonction faisant perdre immédiatement le joueur
 function mort(){
-    playerLife = -1
+    if (playerDegat == false){
+        playerLife = -1
 
-    // comme pour le reste des sources de dégât
-    // montrer malgré tout que le joueur prend des dégâts en le faisant clignoter
+        // comme pour le reste des sources de dégât
+        // montrer malgré tout que le joueur prend des dégâts en le faisant clignoter
 
-    this.time.addEvent({        
-        delay : 100,
-        callback : () => {
-            if(playerOpacity){
-                player.alpha = 0.25;
-                playerOpacity = false
-            }
-            else {
-                player.alpha = 1;
-                playerOpacity = true;
-            }
-        },
-        repeat : 19
-    })
+        this.time.addEvent({        
+            delay : 100,
+            callback : () => {
+                if(playerOpacity){
+                    player.alpha = 0.25;
+                    playerOpacity = false
+                }
+                else {
+                    player.alpha = 1;
+                    playerOpacity = true;
+                }
+            },
+            repeat : 19
+        })
+    }
+}
+
+// fonction débloquant la nouvelle capacité en le signalant à l'écran
+function obtention(){
+
+    // l'icone de l'objet ramassé apparait dans l'interface
+    pioletInterface.setVisible(true);
+    // l'objet disparait de la carte
+    piolet.disableBody(true,true);
+
+    // affichage d'un message expliquant la situation
+    info=this.add.text(150,75,"Pingi a ramassé",{fontSize:'50px',fill:'#FF7F00'}).setScrollFactor(0);
+    objet=this.add.text(200,125,"un PIOLET !",{fontSize:'50px',fill:'#FF7F00'}).setScrollFactor(0);
+    fonction=this.add.text(150,185,"il peut désormais s'accorcher aux murs",{fontSize:'20px',fill:'#FF7F00'}).setScrollFactor(0);
+    // le laisser afficher pendant quelques secondes avant de le faire disparaitre
+    setTimeout(() => {
+        info.destroy();
+        objet.destroy();
+        fonction.destroy();
+    },7000);
+}
+
+// fonction avertissant le joueur qu'il a réussi à finir le niveau
+function victory(){
+    victoire=this.add.text(185,80, "YOU WIN !",{fontSize:'75px',fill:'#34C924'}).setScrollFactor(0);
+    message=this.add.text(100,160, "Félicitations vous avez atteint la fin du niveau",{fontSize:'20px',fill:'#34C924'}).setScrollFactor(0);
+    relance=this.add.text(175,180, "appuyer sur F5 pour recommencer",{fontSize:'20px',fill:'#34C924'}).setScrollFactor(0);
+    lockTouche = true;
+}
+
+// gestion de la collecte des pièces
+function collecte1 (){
+    piece1.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte2 (){
+    piece2.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte3 (){
+    piece3.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte4 (){
+    piece4.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte5 (){
+    piece5.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte6 (){
+    piece6.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte7 (){
+    piece7.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte8 (){
+    piece8.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte9 (){
+    piece9.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte10 (){
+    piece10.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
+}
+function collecte11 (){
+    piece11.disableBody(true,true);
+    nombre = nombre +1;
+    score.setText ( + nombre);
 }
 
 // gérer l'interaction entre le joueur et le faucon A
@@ -641,3 +901,572 @@ function collisionfauconA() {
     }
 
 }
+/*
+// gérer l'interaction entre le joueur et le faucon B
+function collisionfauconB() {
+
+    // repérer le bord des hitbox du joueur et de l'ennemi
+    var boundsPlayer = player.getBounds();
+    var boundsEnemy = fauconB.getBounds();
+    if (fauconB.body.touching.down) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+            player.setVelocityY(50)
+        }
+    }
+    // en prenant compte de la hit box, mettre les deux en >
+    // en prenant compte du problème de hit box mettre le deuxième en <
+    if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
+    // on prend des degats si on est fixe
+    // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right >= boundsEnemy.left + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
+        playerLife = playerLife + 1;
+        fauconB.destroy();
+        player.setVelocityY(-50)
+    }
+}
+*/
+
+/*
+// gérer l'interaction entre le joueur et le poisson A
+function collisionpoissonA() {
+
+    // repérer le bord des hitbox du joueur et de l'ennemi
+    var boundsPlayer = player.getBounds();
+    var boundsEnemy = poissonA.getBounds();
+    if (poissonA.body.touching.down) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+            player.setVelocityY(50)
+        }
+    }
+    // en prenant compte de la hit box, mettre les deux en >
+    // en prenant compte du problème de hit box mettre le deuxième en <
+    if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
+    // on prend des degats si on est fixe
+    // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right >= boundsEnemy.left + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
+        playerLife = playerLife + 1;
+        poissonA.destroy();
+        player.setVelocityY(-50)
+    }
+}
+*/
+
+// gérer l'interaction entre le joueur et le poisson B
+function collisionpoissonB() {
+
+    // repérer le bord des hitbox du joueur et de l'ennemi
+    var boundsPlayer = player.getBounds();
+    var boundsEnemy = poissonB.getBounds();
+    if (poissonB.body.touching.down) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+            player.setVelocityY(50)
+        }
+    }
+    // en prenant compte de la hit box, mettre les deux en >
+    // en prenant compte du problème de hit box mettre le deuxième en <
+    if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
+    // on prend des degats si on est fixe
+    // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right >= boundsEnemy.left + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
+        playerLife = playerLife + 1;
+        poissonB.destroy();
+        player.setVelocityY(-50)
+    }
+}
+
+// gérer l'interaction entre le joueur et le renard A
+function collisionrenardA() {
+
+    // repérer le bord des hitbox du joueur et de l'ennemi
+    var boundsPlayer = player.getBounds();
+    var boundsEnemy = renardA.getBounds();
+    if (renardA.body.touching.down) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+            player.setVelocityY(50)
+        }
+    }
+    // en prenant compte de la hit box, mettre les deux en >
+    // en prenant compte du problème de hit box mettre le deuxième en <
+    if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
+    // on prend des degats si on est fixe
+    // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right >= boundsEnemy.left + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
+        playerLife = playerLife + 1;
+        renardA.destroy();
+        player.setVelocityY(-50)
+    }
+}
+
+// gérer l'interaction entre le joueur et le renard B
+function collisionrenardB() {
+
+    // repérer le bord des hitbox du joueur et de l'ennemi
+    var boundsPlayer = player.getBounds();
+    var boundsEnemy = renardB.getBounds();
+    if (renardB.body.touching.down) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+            player.setVelocityY(50)
+        }
+    }
+    // en prenant compte de la hit box, mettre les deux en >
+    // en prenant compte du problème de hit box mettre le deuxième en <
+    if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
+    // on prend des degats si on est fixe
+    // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right >= boundsEnemy.left + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
+        playerLife = playerLife + 1;
+        renardB.destroy();
+        player.setVelocityY(-50)
+    }
+}
+
+/*
+// gérer l'interaction entre le joueur et le renard C
+function collisionrenardC() {
+
+    // repérer le bord des hitbox du joueur et de l'ennemi
+    var boundsPlayer = player.getBounds();
+    var boundsEnemy = renardC.getBounds();
+    if (renardC.body.touching.down) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+            player.setVelocityY(50)
+        }
+    }
+    // en prenant compte de la hit box, mettre les deux en >
+    // en prenant compte du problème de hit box mettre le deuxième en <
+    if (boundsPlayer.left >= boundsEnemy.right && boundsPlayer.left >= boundsEnemy.right + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    // avec le deuxième en < on ne prend pas de degat si on se déplace à travers l'ennemi
+    // on prend des degats si on est fixe
+    // si le deuxième est en > on prend des degats en passant au travers mais aussi lorsque l'on saute sur l'ennemi pour l'éliminer
+    if (boundsPlayer.right >= boundsEnemy.left && boundsPlayer.right >= boundsEnemy.left + 1) {
+        if (playerDegat == false){
+            playerLife = playerLife - 1;
+            playerDegat = true;
+            playerOpacity = true;
+            this.time.addEvent({        
+                delay : 100,
+                callback : () => {
+                    if(playerOpacity){
+                        player.alpha = 0.25;
+                        playerOpacity = false
+                    }
+                    else {
+                        player.alpha = 1;
+                        playerOpacity = true;
+                    }
+                },
+                repeat : 19
+            })
+            this.time.delayedCall(2000, () => {
+                playerDegat = false;
+                player.alpha = 1;
+            });
+        }
+    }
+    if (boundsPlayer.bottom >= boundsEnemy.top && boundsPlayer.bottom <= boundsEnemy.top + 1){
+        playerLife = playerLife + 1;
+        renardC.destroy();
+        player.setVelocityY(-50)
+    }
+}
+*/
