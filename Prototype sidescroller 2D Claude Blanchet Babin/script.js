@@ -392,7 +392,7 @@ function create(){
 
     // faire en sorte que le joueur collide avec les platformes
     this.physics.add.collider(player, calque_grotte, classique, null, this);
-    this.physics.add.collider(player, calque_mur_glace);
+    this.physics.add.collider(player, calque_mur_glace, classique, null, this);
     this.physics.add.collider(player, calque_plateforme, classique, null, this);
 
     // afficher les animations du personnage lorsqu'il se déplace
