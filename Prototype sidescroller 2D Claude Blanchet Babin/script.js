@@ -670,15 +670,15 @@ function ralentir (){
 
 // fonction permettant de faire glisser le personnage avec de l'inertie lorsqu'il se trouve dans le biome glace (sauf plateforme car cela rendrait le déplacement beaucoup trop difficile)
 function glisse (){
-    playerVitesse = 300
+    playerVitesse = 275
     player.setFriction(0.5);
 
     if (cursors.left.isDown){
-        playerFace = -20;
+        playerFace = -10;
     }
 
     if (cursors.right.isDown){
-        playerFace = 20;
+        playerFace = 10;
     }
 
     /* autre version pour ajouter de l'inertie pendant un certain temps
@@ -718,7 +718,7 @@ function repousse (){
 
 // fonction permettent de remettre les valeurs par défaut lorsque le personnage se trouve sur un calque sans altération
 function classique (){
-    playerVitesse = 200
+    playerVitesse = 250
     playerFace = 0
 }
 
