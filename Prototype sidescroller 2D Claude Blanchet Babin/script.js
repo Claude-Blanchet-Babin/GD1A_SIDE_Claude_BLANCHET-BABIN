@@ -6,7 +6,7 @@ var config = {
         default: 'arcade',
         arcade: {
         gravity: { y: 0 },
-        debug: true
+        debug: false
     }},
     input:{gamepad:true},
     scene: {preload: preload, create: create, update: update }
