@@ -6,7 +6,7 @@ var config = {
         default: 'arcade',
         arcade: {
         gravity: { y: 0 },
-        debug: false
+        debug: true
     }},
     input:{gamepad:true},
     scene: {preload: preload, create: create, update: update }
@@ -21,9 +21,14 @@ function preload(){
     this.load.image("Phaser_tuilesdejeu","assetsjeu/images/tuile.png");
     this.load.tilemapTiledJSON("carte","assetsjeu/carte.json")
 
-    // chargement de l'interface utilisateur
+    // chargement de l'interface utilisateur et des collectables
     this.load.image("interface","assetsjeu/images/ui.png")
     this.load.image("dessus","assetsjeu/images/dessus.png")
+    this.load.image("piece","assetsjeu/images/piece.png")
+    this.load.image("ui","assetsjeu/images/ui.png")
+    this.load.image("pioletObj","assetsjeu/images/piolet_32.png")
+    this.load.image("pioletUI","assetsjeu/images/piolet_ui.png")
+    this.load.image("pioletUI2","assetsjeu/images/piolet_ui2.png")
     this.load.spritesheet("niveauVie","assetsjeu/images/temperature.png",
     {frameWidth : 20, frameHeight: 79});
 
@@ -44,11 +49,6 @@ function preload(){
     this.load.image("faucon","assetsjeu/images/faucon.png")
     this.load.image("renard","assetsjeu/images/renard.png")
 
-    // chargement de l'interface et du collectable
-    this.load.image("piece","assetsjeu/images/piece.png")
-    this.load.image("ui","assetsjeu/images/ui.png")
-    this.load.image("pioletObj","assetsjeu/images/piolet_32.png")
-    this.load.image("pioletUI","assetsjeu/images/piolet_ui.png")
 }
 
 // création des variables
@@ -74,6 +74,7 @@ var scoreText;
 var gameOver = false;
 var nombre = 0;
 var pioletAcquis = false;
+var pioletAcquis2 = false
 var lockTouche = false;
 
 
@@ -105,7 +106,7 @@ function create(){
 
     this.quatriemePlanPrallax = this.add.tileSprite(0,0,1600,1600,"fond2");
     this.quatriemePlanPrallax.setOrigin(0,0);
-    this.quatriemePlanPrallax.setScrollFactor(0.82,1);
+    this.quatriemePlanPrallax.setScrollFactor(0.85,1);
 
     this.troisiemePlanPrallax = this.add.tileSprite(0,0,1600,1600,"fond3");
     this.troisiemePlanPrallax.setOrigin(0,0);
@@ -357,6 +358,7 @@ function create(){
     
     // affichage de l'objet (piolet) permettant de débloquer une nouvelle capacacité
     piolet = this.physics.add.image(1420,35,"pioletObj");
+    piolet2 = this.physics.add.image(592,1480,"pioletObj");
 
     // affichage des pièces pouvant être ramassées pour faire monter le score
     piece1 = this.physics.add.image(20,315,"piece");
@@ -364,12 +366,11 @@ function create(){
     piece3 = this.physics.add.image(90,80,"piece");
     piece4 = this.physics.add.image(930,35,"piece");
     piece5 = this.physics.add.image(1550,1550,"piece");
-    piece6 = this.physics.add.image(592,1480,"piece");
-    piece7 = this.physics.add.image(112,1355,"piece");
-    piece8 = this.physics.add.image(1325,335,"piece");
-    piece9 = this.physics.add.image(1110,600,"piece");
-    piece10 = this.physics.add.image(879,840,"piece");
-    piece11 = this.physics.add.image(87,1050,"piece");
+    piece6 = this.physics.add.image(112,1355,"piece");
+    piece7 = this.physics.add.image(1325,335,"piece");
+    piece8 = this.physics.add.image(1110,600,"piece");
+    piece9 = this.physics.add.image(879,840,"piece");
+    piece10 = this.physics.add.image(87,1050,"piece");
 
     // création de la détéction du clavier
     cursors = this.input.keyboard.createCursorKeys();
@@ -390,9 +391,8 @@ function create(){
     */
 
     // faire en sorte que le joueur collide avec les platformes
-    this.physics.add.collider(player, calque_pente, repousse, null, this);
     this.physics.add.collider(player, calque_grotte, classique, null, this);
-    this.physics.add.collider(player, calque_mur_glace, classique, null, this);
+    this.physics.add.collider(player, calque_mur_glace);
     this.physics.add.collider(player, calque_plateforme, classique, null, this);
 
     // afficher les animations du personnage lorsqu'il se déplace
@@ -424,11 +424,11 @@ function create(){
     this.cameras.main.setDeadzone(100,100);
     this.cameras.main.setBounds(0,0,1600,1600);
     
-    (175,80, "GAME OVER",{fontSize:'75px',fill:'#FF0000'})
     // affichage de l'interface utilisateur
     this.add.sprite(0,0,"interface").setOrigin(0,0).setScrollFactor(0);
     lifeUI = this.add.sprite(14,87, "niveauVie").setOrigin(0,0).setScrollFactor(0);
     pioletInterface = this.add.image(0,0,"pioletUI").setVisible(false).setOrigin(0,0).setScrollFactor(0);
+    pioletInterface2 = this.add.image(0,0,"pioletUI2").setVisible(false).setOrigin(0,0).setScrollFactor(0);
     score=this.add.text(50,21,"0",{fontSize:'32px',fill:'#FF7F00', fontWeight : 'bold'}).setOrigin(0,0).setScrollFactor(0);
     this.add.sprite(0,0,"dessus").setOrigin(0,0).setScrollFactor(0);
 
@@ -475,11 +475,11 @@ function create(){
     this.physics.add.overlap(player,piece8,collecte8,null,this);
     this.physics.add.overlap(player,piece9,collecte9,null,this);
     this.physics.add.overlap(player,piece10,collecte10,null,this);
-    this.physics.add.overlap(player,piece11,collecte11,null,this);
 
     // le personnage obtient une nouvelle compétence s'il ramasse le piolet
     // il pourra désormais s'accrocher au mur
     this.physics.add.overlap(player,piolet,obtention,null,this);
+    this.physics.add.overlap(player,piolet2,obtention2,null,this);
 
 
     // création des différents niveaux de vie dans le thermomètre
@@ -527,13 +527,13 @@ function update(){
     if (player.x >=1408 && player.y >= 672){
         player.setGravityY(100);
         playerSaut = 150;
-        playerVitesse = 150;
+        playerVitesse = 120;
     }
 
     if (player.y >= 1184){
         player.setGravityY(100);
         playerSaut = 150;
-        playerVitesse = 150;
+        playerVitesse = 120;
     }
 
     // remettre la gravité standard lorsqu'il sort de l'eau
@@ -549,8 +549,8 @@ function update(){
     }
 
     if(gameOver){
-        perdu=this.add.text(175,80, "GAME OVER",{fontSize:'75px',fill:'#FF0000'}).setScrollFactor(0);
-        relance=this.add.text(115,150, "appuyer sur F5 pour recommencer",{fontSize:'30px',fill:'#FF0000'}).setScrollFactor(0);
+        perdu=this.add.text(175,90, "GAME OVER",{fontSize:'75px',fill:'#FF0000'}).setScrollFactor(0);
+        relance=this.add.text(115,150, "appuyez sur F5 pour recommencer",{fontSize:'30px',fill:'#FF0000'}).setScrollFactor(0);
         lifeUI.destroy();
         return;
     }
@@ -569,7 +569,7 @@ function update(){
         player.setVelocityX(playerFace); //vitesse nulle
         player.anims.play('turn'); //animation fait face caméra
     }
-    if ((cursors.up.isDown || controller.up) && (player.body.blocked.down || player.body.blocked.right || player.body.blocked.left) && lockTouche == false){
+    if ((cursors.up.isDown || controller.up) && player.body.blocked.down && lockTouche == false){
         //si touche haut appuyée ET que le perso touche le sol
         player.setVelocityY(-playerSaut); //alors vitesse verticale négative
         //(on saute)
@@ -597,6 +597,33 @@ function update(){
     
     // WALLJUMP
 
+    // tant que le personnage n'a pas ramassé le piolet
+    // s'il essaye de d'avancer contre un mur, il va se cogner et se diriger vers le sol
+    if (pioletAcquis == false && (cursors.left.isDown || controller.left) && player.body.blocked.left && cursors.up.isUp && cursors.space.isUp && !controller.A && player.body.velocity.y > 0 ) {
+        player.setVelocityY(300);
+    }
+
+    if (pioletAcquis == false && (cursors.right.isDown || controller.right) && player.body.blocked.right && cursors.up.isUp && cursors.space.isUp && !controller.A && player.body.velocity.y > 0 ) {
+        player.setVelocityY(300);
+    }
+
+    // capacité de s'accrocher aux murs après avoir obtenu le piolet
+    if (pioletAcquis == true && (cursors.left.isDown || controller.left) && player.body.blocked.left && cursors.up.isUp && cursors.space.isUp && !controller.A && player.body.velocity.y > 0 ) {
+        player.setVelocityY(15);
+    }
+
+    if (pioletAcquis == true && (cursors.right.isDown || controller.right) && player.body.blocked.right && cursors.up.isUp && cursors.space.isUp && !controller.A && player.body.velocity.y > 0 ) {
+        player.setVelocityY(15);
+    }
+
+    // capacité de grimper aux murs après avoir obtenu le second piolet
+    if (pioletAcquis2 == true && (cursors.right.isDown || controller.right) && player.body.blocked.right && (cursors.up.isDown || cursors.space.isDown || controller.A) ) {
+        player.setVelocityY(-100);
+    }
+
+    if (pioletAcquis2 == true && (cursors.left.isDown || controller.left) && player.body.blocked.left && (cursors.up.isDown || cursors.space.isDown || controller.A) ) {
+        player.setVelocityY(-100);
+    }
 }
 
 function degat (){
@@ -637,16 +664,43 @@ function degat (){
 // fonction intervenant dans le biome neige en extérieur
 // montrer que le personnage a du mal à avancer en le ralentissant
 function ralentir (){
-    playerVitesse = 150
-    playerFace = 0
+    playerVitesse = 100;
+    playerFace = 0;
 }
 
 // fonction permettant de faire glisser le personnage avec de l'inertie lorsqu'il se trouve dans le biome glace (sauf plateforme car cela rendrait le déplacement beaucoup trop difficile)
 function glisse (){
     playerVitesse = 300
-    player.setFriction(0.05);
-    player.body.setFriction(0.05);
+    player.setFriction(0.5);
+
+    if (cursors.left.isDown){
+        playerFace = -20;
+    }
+
+    if (cursors.right.isDown){
+        playerFace = 20;
+    }
+
+    /* autre version pour ajouter de l'inertie pendant un certain temps
+    // détecter si le personnage vient d'aller vers la gauche
+    this.input.keyboard.on('keyup_LEFT', function (event) {
+        var timerEvent;
+
+        // déplacer le personnage vers la gauche avec une vitesse de 50 pixels par seconde
+        playerFace = 100;
+
+        // démarrer un timer pour stopper le mouvement après 3 secondes
+        timerEvent = this.time.addEvent({
+            delay: 3000,            
+            callback: function() {
+                playerFace = 0;
+            },
+            callbackScope: this
+        });
+    });
+    */
 }
+
 
 // fonction repoussant le joueur vers la gauche lorsqu'il est sur une pente avec de la neige
 function repousse (){
@@ -664,7 +718,7 @@ function repousse (){
 
 // fonction permettent de remettre les valeurs par défaut lorsque le personnage se trouve sur un calque sans altération
 function classique (){
-    playerVitesse = 300
+    playerVitesse = 200
     playerFace = 0
 }
 
@@ -700,24 +754,51 @@ function obtention(){
     pioletInterface.setVisible(true);
     // l'objet disparait de la carte
     piolet.disableBody(true,true);
+    // activer la variable pour rendre disponible la nouvelle capacité
+    pioletAcquis = true;
 
     // affichage d'un message expliquant la situation
     info=this.add.text(150,75,"Pingi a ramassé",{fontSize:'50px',fill:'#FF7F00'}).setScrollFactor(0);
-    objet=this.add.text(200,125,"un PIOLET !",{fontSize:'50px',fill:'#FF7F00'}).setScrollFactor(0);
-    fonction=this.add.text(150,185,"il peut désormais s'accorcher aux murs",{fontSize:'20px',fill:'#FF7F00'}).setScrollFactor(0);
+    objet=this.add.text(210,125,"un PIOLET !",{fontSize:'50px',fill:'#FF7F00'}).setScrollFactor(0);
+    fonction=this.add.text(50,210,"il peut désormais s'accrocher aux murs et ralentir sa chute",{fontSize:'18px',fill:'#FF7F00'}).setScrollFactor(0);
+    comment=this.add.text(20,230,"pour cela, continuez d'avancer vers le mur en étant collé à lui",{fontSize:'18px',fill:'#FF7F00'}).setScrollFactor(0);
     // le laisser afficher pendant quelques secondes avant de le faire disparaitre
     setTimeout(() => {
         info.destroy();
         objet.destroy();
         fonction.destroy();
+        comment.destroy();
+    },7000);
+}
+
+function obtention2(){
+
+    // l'icone de l'objet ramassé apparait dans l'interface
+    pioletInterface2.setVisible(true);
+    // l'objet disparait de la carte
+    piolet2.disableBody(true,true);
+    // activer la variable pour rendre disponible la nouvelle capacité
+    pioletAcquis2 = true;
+
+    // affichage d'un message expliquant la situation
+    info2=this.add.text(150,75,"Pingi a ramassé",{fontSize:'50px',fill:'#FF7F00'}).setScrollFactor(0);
+    objet2=this.add.text(140,125,"un autre PIOLET !",{fontSize:'50px',fill:'#FF7F00'}).setScrollFactor(0);
+    fonction2=this.add.text(130,210,"il peut désormais grimper aux murs",{fontSize:'20px',fill:'#FF7F00'}).setScrollFactor(0);
+    comment2=this.add.text(30,230,"pour cela, appuyez sur espace en étant collé à un mur",{fontSize:'20px',fill:'#FF7F00'}).setScrollFactor(0);
+    // le laisser afficher pendant quelques secondes avant de le faire disparaitre
+    setTimeout(() => {
+        info2.destroy();
+        objet2.destroy();
+        fonction2.destroy();
+        comment2.destroy();
     },7000);
 }
 
 // fonction avertissant le joueur qu'il a réussi à finir le niveau
 function victory(){
-    victoire=this.add.text(185,80, "YOU WIN !",{fontSize:'75px',fill:'#34C924'}).setScrollFactor(0);
+    victoire=this.add.text(185,90, "YOU WIN !",{fontSize:'75px',fill:'#34C924'}).setScrollFactor(0);
     message=this.add.text(100,160, "Félicitations vous avez atteint la fin du niveau",{fontSize:'20px',fill:'#34C924'}).setScrollFactor(0);
-    relance=this.add.text(175,180, "appuyer sur F5 pour recommencer",{fontSize:'20px',fill:'#34C924'}).setScrollFactor(0);
+    relance=this.add.text(175,180, "appuyez sur F5 pour recommencer",{fontSize:'20px',fill:'#34C924'}).setScrollFactor(0);
     lockTouche = true;
 }
 
@@ -769,11 +850,6 @@ function collecte9 (){
 }
 function collecte10 (){
     piece10.disableBody(true,true);
-    nombre = nombre +1;
-    score.setText ( + nombre);
-}
-function collecte11 (){
-    piece11.disableBody(true,true);
     nombre = nombre +1;
     score.setText ( + nombre);
 }
